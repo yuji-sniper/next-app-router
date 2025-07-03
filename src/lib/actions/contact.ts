@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation"
 import { ContactSchema } from "@/validations/contact"
+import { prisma } from "@/lib/prisma"
 
 export type ContactActionState = {
   success: boolean
@@ -15,7 +16,7 @@ export type ContactActionState = {
     email?: string[]
     message?: string[]
   }
-  serverError?: string
+  message?: string
 }
 
 export async function postContactForm(
@@ -47,11 +48,39 @@ export async function postContactForm(
         email: errors.email ?? [],
         message: errors.message ?? [],
       },
-      serverError: '入力内容に誤りがあります'
+      message: '入力内容に誤りがあります'
     }
   }
 
   // DBに保存
+  const existingContact = await prisma.contact.findUnique({
+    where: {
+      email: email as string,
+    },
+  })
+
+  if (existingContact) {
+    return {
+      success: false,
+      input: {
+        name: name as string,
+        email: email as string,
+        message: message as string,
+      },
+      errors: {
+        email: ['このメールアドレスはすでに使用されています'],
+      },
+      message: 'このメールアドレスはすでに使用されています',
+    }
+  }
+
+  await prisma.contact.create({
+    data: {
+      name: name as string,
+      email: email as string,
+      message: message as string,
+    },
+  })
 
   redirect('/contact/complete')
 }
