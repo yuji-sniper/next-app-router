@@ -1,7 +1,7 @@
 export default function Page() {
   return (
     <div>
-      Profileページ
+      <p>送信が完了しました</p>
     </div>
   )
 }
